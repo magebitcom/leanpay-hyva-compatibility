@@ -29,23 +29,23 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
 ?>
 <?php if ($viewKey !== InstallmentHelper::LEANPAY_INSTALLMENT_VIEW_OPTION_PRODUCT_PAGE): ?>
     <?php if ($price && $canShow && $meetsThreshold): ?>
-        <div class="installment-price plp-installment"
+        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3"
              style="color: <?= $escaper->escapeHtmlAttr($color) ?>;
                      background-color: <?= $escaper->escapeHtmlAttr($helper->getPlpBackgroundColor()) ?>;
                      font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
             <?= $escaper->escapeHtml($helper->getCategoryPriceBlock($amount, $price)); ?>
-            <img class="installment-logo"
+            <img class="w-auto inline-block shrink-0"
                  src="<?= /* @noEscape */ $block->getLogo(); ?>"
                  alt="leanpay-logo"
                  style="height: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;"/>
         </div>
     <?php elseif ($price && $canShow && !$meetsThreshold): ?>
-        <div class="installment-price plp-installment"
+        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3"
              style="color: <?= $escaper->escapeHtmlAttr($color) ?>;
                      background-color: <?= $escaper->escapeHtmlAttr($helper->getPlpBackgroundColor()) ?>;
                      font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
             <span><?= $escaper->escapeHtml($helper->getUnderThresholdText()); ?></span>
-            <img class="installment-logo"
+            <img class="w-auto inline-block shrink-0"
                  src="<?= /* @noEscape */ $block->getLogo(); ?>"
                  alt="leanpay-logo"
                  style="height: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;"/>
@@ -53,9 +53,8 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
     <?php endif; ?>
 <?php else: ?>
     <?php if ($price && $canShow): ?>
-        <div class="installment-wrapper">
-            <div class="installment-additional-wrapper" style="font-size: <?= /* @noEscape */
-            $fontSize ?>px;">
+        <div class="relative">
+            <div style="font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
                 <?php
                 $list = $helper->getInstallmentList($amount, $vendorProductName);
                 $maxPeriod = $helper->getMaxInstallmentPeriod($amount, $vendorProductName);
@@ -64,13 +63,13 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                     ? $helper->getEffectiveDefaultInstallmentCount($amount, (string) $vendorProductName)
                     : $helper->getInstallmentPeriodForPrice($amount, $price, $vendorProductName);
                 ?>
-                <div class="installment-pdp-block"
+                <div class="rounded-lg py-3 px-4 mb-2.5"
                      style="background-color: <?= $escaper->escapeHtmlAttr($helper->getBackgroundColor()) ?>;
                              color: <?= $escaper->escapeHtmlAttr($helper->getPdpTextColor()) ?>;
                              font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
-                    <div class="installment-pdp-content">
-                        <div class="installment-pdp-left">
-                            <img class=""
+                    <div class="flex items-center gap-4 justify-between">
+                        <div class="w-12 h-12 shrink-0 grow-0">
+                            <img class="w-full h-full block object-contain"
                                  src="<?= /* @noEscape */ $block->getViewFileUrl(
                                      $isWithinThreshold
                                          ? 'Leanpay_Payment::images/leanpat_short_logo_0.png'
@@ -79,37 +78,37 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                                  alt=""
                                  aria-hidden="true"/>
                         </div>
-                        <div class="installment-pdp-text">
-                            <div class="installment-pdp-price">
+                        <div class="flex-1 flex flex-col">
+                            <div class="font-semibold">
                                 <?php if ($isWithinThreshold): ?>
-                                    <span class="installment-price-amount">
+                                    <span class="text-xl font-semibold">
                                         <?= $escaper->escapeHtml($helper->getProductPriceBlock($amount, $price)); ?>
                                     </span>
                                     <?php if ($currentPeriod > 0): ?>
-                                        <span class="installment-price-count">
+                                        <span class="text-base font-semibold">
                                             <?= $escaper->escapeHtml(' x ' . $currentPeriod . ' ' . ($currentPeriod === 1 ? __('obrok') : __('obroki'))); ?>
                                         </span>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <span class="installment-price-from">
+                                    <span class="text-base font-normal">
                                         <?= $escaper->escapeHtml(__('od ') ); ?>
                                     </span>
-                                    <span class="installment-price-amount">
+                                    <span class="text-xl font-semibold">
                                         <?= $escaper->escapeHtml($helper->getProductPriceOnly($amount, $price)); ?>
                                     </span>
-                                    <span class="installment-price-month">
+                                    <span class="text-sm md:text-base">
                                         <?= $escaper->escapeHtml(' ' . __('/mesec')); ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
                             <?php if ($maxPeriod > 0): ?>
-                                <div class="installment-pdp-period">
+                                <div class="flex gap-2 opacity-90">
                                     <?php if (!$isWithinThreshold): ?>
                                         <?= $escaper->escapeHtml(__('Razdeli na do %1 obrokov', $maxPeriod)); ?>
                                     <?php else: ?>
                                         <?= $escaper->escapeHtml(__('0% obresti, 0 stroškov')); ?>
                                     <?php endif; ?>
-                                    <img class="installment-logo"
+                                    <img class="align-bottom"
                                          src="<?= /* @noEscape */ $block->getViewFileUrl('Leanpay_Payment::images/leanpay-original.svg'); ?>"
                                          alt="leanpay-logo"
                                          style="color: <?= $escaper->escapeHtmlAttr($helper->getPdpTextColor()) ?>;"/>
