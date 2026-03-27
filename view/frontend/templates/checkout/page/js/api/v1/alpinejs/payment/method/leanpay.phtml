@@ -1,0 +1,70 @@
+<?php
+declare(strict_types=1);
+
+use Leanpay\Payment\Model\Method\Leanpay;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+?>
+<script>
+    (() => {
+        // Wait for the Hyvä Checkout frontend API to fully initialize before registering.
+        hyvaCheckout.api.after(() => {
+            hyvaCheckout.payment.registerMethod({
+                code: '<?= $escaper->escapeJs(Leanpay::CODE) ?>',
+
+                method: {
+                    async getRedirectParams() {
+                        const formData = new FormData();
+                        formData.append('form_key', hyva.getFormKey());
+
+                        const result = await fetch('<?= $escaper->escapeJs($block->getUrl('leanpay/checkout/placeorder')) ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        const response = await result.json();
+
+                        if (response?.error || !result.ok || !response?.data) {
+                            throw new Error(response?.message || 'An error occurred on the server. Please try to place the order again.');
+                        }
+
+                        return response;
+                    },
+
+                    // Called when the customer clicks Place Order. Use fallback() to proceed with default order placement.
+                    placeOrder: async function ({fallback}) {
+                        await fallback();
+
+                        const response = await this.getRedirectParams();
+
+                        hyvaCheckout.navigation.addTask(async () => {
+                            response.skipUenc = true;
+
+                            // Redirect by submitting the form
+                            hyva.postForm(response);
+                        }, {
+                            executeAfter: true,
+                            stackPosition: 9998
+                        });
+                    },
+
+                    handleException: async function ({exception, fallback}) {
+                        hyvaCheckout.message.dialog(exception.message, 'Something went wrong while placing the order', 'error', null, {
+                            cancelable: false
+                        });
+
+                        await fallback({exception});
+                    }
+                }
+            });
+        });
+    })();
+</script>
+<?php isset($hyvaCsp) && $hyvaCsp->registerInlineScript() ?>

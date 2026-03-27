@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd"
+>
+    <body>
+        <referenceContainer name="hyva.checkout.api-v1.payment-methods">
+            <block name="hyva.checkout.alpinejs.leanpay"
+                   template="Leanpay_PaymentHyva::checkout/page/js/api/v1/alpinejs/payment/method/leanpay.phtml"
+            />
+        </referenceContainer>
+    </body>
+</page>

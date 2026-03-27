@@ -1,0 +1,19 @@
+{
+  "name": "leanpay/payment-hyva",
+  "description": "N/A",
+  "require": {
+    "php": ">=8.1",
+    "hyva-themes/magento2-default-theme": "*",
+    "leanpay/payment": ">=0.13.1"
+  },
+  "type": "magento2-module",
+  "version": "0.1.0",
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Leanpay\\PaymentHyva\\": ""
+    }
+  }
+}
