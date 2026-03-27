@@ -1,0 +1,22 @@
+<?php
+declare(strict_types=1);
+
+use Leanpay\Payment\Model\Method\Leanpay;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Leanpay $method */
+/** @var Escaper $escaper */
+
+$method = $block->getMethod();
+$instructions = $method->getConfigData('instructions');
+?>
+<?php /* The wire Payment Method directive is required to sit in the root DOM element. */ ?>
+<div>
+    <?php if (! empty($instructions)): ?>
+        <p class="p-4 bg-gray-100 rounded-lg">
+            <?= /* @noEscape */ nl2br($escaper->escapeHtml($instructions)) ?>
+        </p>
+    <?php endif ?>
+</div>
