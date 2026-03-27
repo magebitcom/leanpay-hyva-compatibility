@@ -6,7 +6,23 @@
         <referenceBlock name="checkout.payment.methods">
             <block name="checkout.payment.method.leanpay"
                    as="leanpay"
-                   template="Leanpay_PaymentHyva::checkout/payment/method/leanpay.phtml"/>
+                   template="Leanpay_PaymentHyva::checkout/payment/method/leanpay.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">
+                        \Leanpay\PaymentHyva\Magewire\Checkout\Payment\Method\Leanpay
+                    </argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Leanpay_Payment::images/leanpay.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">80</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string" translate="true">Leanpay Icon</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
         </referenceBlock>
     </body>
 </page>
