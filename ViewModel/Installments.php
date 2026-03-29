@@ -9,8 +9,6 @@ use Magento\Framework\View\Element\Block\ArgumentInterface;
 
 class Installments implements ArgumentInterface
 {
-    private const TEMPLATE_CHECKOUT = 'Leanpay_PaymentHyva::pricing/render/installment.phtml';
-
     /**
      * @var array<string,string>
      */
@@ -55,7 +53,6 @@ class Installments implements ArgumentInterface
             $this->templateCache[$cacheKey] = $this->templatePriceBox
                 ->setData('amount', $amount)
                 ->setData('is_checkout', $isCheckout)
-                ->setTemplate(self::TEMPLATE_CHECKOUT)
                 ->toHtml() ?? '';
         }
 

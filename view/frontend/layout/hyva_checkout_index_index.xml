@@ -8,5 +8,10 @@
                    template="Leanpay_PaymentHyva::checkout/page/js/api/v1/alpinejs/payment/method/leanpay.phtml"
             />
         </referenceContainer>
+        <referenceContainer name="hyva.checkout.api-v1.after">
+            <block name="hyva.checkout.alpinejs.leanpay.installments"
+                   template="Leanpay_PaymentHyva::pricing/render/js/installment.phtml"
+            />
+        </referenceContainer>
     </body>
 </page>

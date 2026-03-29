@@ -1,0 +1,23 @@
+<?php
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+?>
+<script>
+    function initLeanpayInstallment() {
+        return {
+            init() {
+                console.log('Leanpay Initialized');
+            }
+        }
+    }
+
+    window.addEventListener('alpine:init', () => {
+        Alpine.data('initLeanpayInstallment', initLeanpayInstallment);
+    }, {once: true});
+</script>
+<?php isset($hyvaCsp) && $hyvaCsp->registerInlineScript() ?>
