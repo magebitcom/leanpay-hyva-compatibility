@@ -4,4 +4,9 @@
     <head>
         <remove src="Leanpay_Payment::css/leanpay.css" />
     </head>
+    <body>
+        <referenceContainer name="product.info.installment.price" htmlClass="mt-4"/>
+
+        <move element="product.info.installment.price" destination="product.info.additional" />
+    </body>
 </page>
