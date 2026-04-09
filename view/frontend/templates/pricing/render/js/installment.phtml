@@ -20,6 +20,9 @@ use Magento\Framework\View\Element\Template;
             },
             getCalculatorArrowClasses() {
                 return this.calculatorVisible ? 'rotate-180' : '';
+            },
+            closeCalculator() {
+                this.calculatorVisible = false;
             }
         }
     }
