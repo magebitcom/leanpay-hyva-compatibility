@@ -8,5 +8,13 @@
         <referenceContainer name="product.info.installment.price" htmlClass="mt-4"/>
 
         <move element="product.info.installment.price" destination="product.info.additional" />
+
+        <referenceBlock name="product.price.installment_price">
+            <arguments>
+                <argument name="hyva_js_template_dependencies" xsi:type="array">
+                    <item name="Leanpay_PaymentHyva::pricing/render/js/installment.phtml" xsi:type="boolean">true</item>
+                </argument>
+            </arguments>
+        </referenceBlock>
     </body>
 </page>
