@@ -115,6 +115,15 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                                 </div>
                             <?php endif; ?>
                         </div>
+                        <button type="button"
+                                class="bg-white opacity-90 border border-black/10 rounded-md py-1 px-2 cursor-pointer text-base font-semibold
+                                       flex items-center justify-center gap-1.5 shrink-0 transition-colors shadow-sm hover:opacity-100 active:opacity-80"
+                                aria-label="<?= $escaper->escapeHtmlAttr(__('Izračun')); ?>">
+                            <img class="w-8 h-8 block shrink-0 transition-transform rotate-90"
+                                 src="<?= /* @noEscape */ $block->getViewFileUrl('Leanpay_Payment::images/dropdown.svg'); ?>"
+                                 alt=""
+                                 aria-hidden="true"/>
+                        </button>
                     </div>
                 </div>
             </div>
