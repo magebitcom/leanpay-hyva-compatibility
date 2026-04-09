@@ -10,4 +10,7 @@
             </argument>
         </arguments>
     </type>
+    <type name="Hyva\Theme\ViewModel\ProductListItem">
+        <plugin name="add_installments_to_plp" type="Leanpay\PaymentHyva\Plugin\ViewModel\ProductListItemPlugin"/>
+    </type>
 </config>
