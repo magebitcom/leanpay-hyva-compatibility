@@ -11,9 +11,16 @@ use Magento\Framework\View\Element\Template;
     function initLeanpayInstallment() {
         return {
             calculatorVisible: false,
+            selectedPlanId: 0,
+
+            installmentPlans: {},
 
             init() {
                 console.log('Leanpay Initialized');
+
+                this.installmentPlans = JSON.parse(this.$root.dataset.installmentPlans);
+
+                console.log(this.installmentPlans);
             },
             toggleCalculator() {
                 this.calculatorVisible = !this.calculatorVisible;
@@ -23,6 +30,12 @@ use Magento\Framework\View\Element\Template;
             },
             closeCalculator() {
                 this.calculatorVisible = false;
+            },
+            selectedPlan() {
+                return this.installmentPlans.data[this.selectedPlanId] || null;
+            },
+            getSelectedPlanPriceHtml() {
+                return hyva.formatPrice(this.selectedPlan()?.installment_amount || 0);
             }
         }
     }
