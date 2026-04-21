@@ -54,9 +54,12 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
 <?php else: ?>
     <?php if ($price && $canShow): ?>
         <div class="relative"
+             id="leanpay-wrapper"
              x-data="initLeanpayInstallment"
              @click.outside="closeCalculator"
              data-installment-plans="<?= $escaper->escapeHtmlAttr($helper->getJsonConfig($amount, $vendorProductName)) ?>"
+             data-amount="<?= $escaper->escapeHtmlAttr($amount) ?>"
+             wire:key="<?= $escaper->escapeHtmlAttr(uniqid('leanpay')) ?>"
         >
             <div style="font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
                 <?php
@@ -172,8 +175,8 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                                    :min="installmentPlans.min"
                                    :max="installmentPlans.max"
                                    step="1"
-                                   x-model="selectedPlanId"
-                                   value="0"
+                                   @change="setSelectedPlanId"
+                                   :value="selectedPlanId"
                                    class="w-full"
                             >
                         </div>

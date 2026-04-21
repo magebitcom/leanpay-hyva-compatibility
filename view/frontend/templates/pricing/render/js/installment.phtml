@@ -1,26 +1,51 @@
 <?php
 declare(strict_types=1);
 
+use Hyva\Theme\Model\ViewModelRegistry;
+use Leanpay\PaymentHyva\ViewModel\Installments;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 
 /** @var Escaper $escaper */
 /** @var Template $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var Installments $installments */
+
+$installments = $viewModels->require(Installments::class);
 ?>
 <script>
+    let installmentMap = <?= /** @noEscape */ $installments->getInstallmentMap() ?>;
+
     function initLeanpayInstallment() {
         return {
             calculatorVisible: false,
             selectedPlanId: 0,
-
             installmentPlans: {},
+            currentAmount: 0,
 
             init() {
-                console.log('Leanpay Initialized');
-
                 this.installmentPlans = JSON.parse(this.$root.dataset.installmentPlans);
+                this.selectedPlanId = this.installmentPlans.defaultIndex;
+                this.currentAmount = parseFloat(this.$root.dataset.amount);
 
-                console.log(this.installmentPlans);
+                <?php if ($installments->isProductPage()): ?>
+                    this.$nextTick(() => {
+                        // Install a price hook into the hyva PDP price block to retrieve the current price
+                        const priceElement = document.querySelector('[x-data="initPrice<?=$installments->getProductId()?>()"]');
+                        const alpineData = Alpine.$data(priceElement);
+
+                        // Save original function so that we can override it again
+                        alpineData.calculateFinalPriceWithCustomOptionsOriginal = alpineData.calculateFinalPriceWithCustomOptionsOriginal || alpineData.calculateFinalPriceWithCustomOptions;
+                        const originalFunction = alpineData.calculateFinalPriceWithCustomOptionsOriginal;
+                        alpineData.calculateFinalPriceWithCustomOptions = function() {
+                            originalFunction.apply(alpineData);
+
+                            this.currentAmount = alpineData.calculatedFinalPriceWithCustomOptions;
+                        }.bind(this);
+                    });
+
+                    this.$watch('currentAmount', this.updateCalculator.bind(this));
+                <?php endif; ?>
             },
             toggleCalculator() {
                 this.calculatorVisible = !this.calculatorVisible;
@@ -31,11 +56,37 @@ use Magento\Framework\View\Element\Template;
             closeCalculator() {
                 this.calculatorVisible = false;
             },
+            setSelectedPlanId() {
+                this.selectedPlanId = this.$event.target.value
+            },
             selectedPlan() {
                 return this.installmentPlans.data[this.selectedPlanId] || null;
             },
             getSelectedPlanPriceHtml() {
-                return hyva.formatPrice(this.selectedPlan()?.installment_amount || 0);
+                return hyva.formatPrice(this.selectedPlan()?.installment_amount || 0, false, {
+                    decimalSeparator: '.'
+                });
+            },
+            async updateCalculator(amount, oldAmount) {
+                if (amount === oldAmount) {
+                    return;
+                }
+
+                if (!(amount in installmentMap)) {
+                    await fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                    })
+                        .then(response => response.json())
+                        .then(result => {
+                            installmentMap[amount] = result.installment_html;
+                        });
+                }
+
+                hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
             }
         }
     }
