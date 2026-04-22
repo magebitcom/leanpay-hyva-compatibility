@@ -22,10 +22,11 @@ $installments = $viewModels->require(Installments::class);
             selectedPlanId: 0,
             installmentPlans: {},
             currentAmount: 0,
+            abortController: null,
 
             init() {
-                this.installmentPlans = JSON.parse(this.$root.dataset.installmentPlans);
-                this.selectedPlanId = this.installmentPlans.defaultIndex;
+                this.installmentPlans = JSON.parse(this.$root.dataset.installmentPlans || '{}');
+                this.selectedPlanId = this.installmentPlans.defaultIndex || 0;
                 this.currentAmount = parseFloat(this.$root.dataset.amount);
 
                 <?php if ($installments->isProductPage()): ?>
@@ -67,26 +68,41 @@ $installments = $viewModels->require(Installments::class);
                     decimalSeparator: '.'
                 });
             },
+            async loadInstallmentHtml(amount) {
+                if (this.abortController) {
+                    this.abortController.abort();
+                }
+
+                this.abortController = new AbortController();
+
+                return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
+                    method: 'GET',
+                    signal: this.abortController.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        return result.installment_html;
+                    });
+            },
             async updateCalculator(amount, oldAmount) {
                 if (amount === oldAmount) {
                     return;
                 }
 
-                if (!(amount in installmentMap)) {
-                    await fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                    })
-                        .then(response => response.json())
-                        .then(result => {
-                            installmentMap[amount] = result.installment_html;
-                        });
-                }
+                try {
+                    if (!(amount in installmentMap)) {
+                        installmentMap[amount] = await this.loadInstallmentHtml(amount);
+                    }
 
-                hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
+                    hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
+                } catch (error) {
+                    // Ignore abort errors
+                    console.error(error);
+                }
             }
         }
     }

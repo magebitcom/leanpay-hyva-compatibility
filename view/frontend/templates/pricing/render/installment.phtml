@@ -52,15 +52,15 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
         </div>
     <?php endif; ?>
 <?php else: ?>
-    <?php if ($price && $canShow): ?>
-        <div class="relative"
-             id="leanpay-wrapper"
-             x-data="initLeanpayInstallment"
-             @click.outside="closeCalculator"
-             data-installment-plans="<?= $escaper->escapeHtmlAttr($helper->getJsonConfig($amount, $vendorProductName)) ?>"
-             data-amount="<?= $escaper->escapeHtmlAttr($amount) ?>"
-             wire:key="<?= $escaper->escapeHtmlAttr(uniqid('leanpay')) ?>"
-        >
+    <div class="relative <?= $escaper->escapeHtmlAttr($price && $canShow ? 'block' : 'hidden') ?>"
+            id="leanpay-wrapper"
+            x-data="initLeanpayInstallment"
+            @click.outside="closeCalculator"
+            data-installment-plans="<?= $escaper->escapeHtmlAttr($helper->getJsonConfig($amount, $vendorProductName)) ?>"
+            data-amount="<?= $escaper->escapeHtmlAttr($amount) ?>"
+            wire:key="<?= $escaper->escapeHtmlAttr(uniqid('leanpay')) ?>"
+    >
+        <?php if ($price && $canShow): ?>
             <div style="font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
                 <?php
                 $list = $helper->getInstallmentList($amount, $vendorProductName);
@@ -210,6 +210,6 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                     </div>
                 </div>
             </div>
-        </div>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
 <?php endif; ?>
