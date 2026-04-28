@@ -183,8 +183,8 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                                      style="--lp-brand: <?= $escaper->escapeHtmlAttr($helper->getBackgroundColor()) ?>;
                                             --lp-brand-text: <?= $escaper->escapeHtmlAttr($helper->getPdpTextColor()) ?>;">
                                     <div class="relative h-1.5 rounded" style="background-color: color-mix(in srgb, var(--lp-brand) 40%, white);">
-                                        <div class="absolute left-0 top-0 h-full rounded pointer-events-none" :style="getTrackFillStyle()"></div>
-                                        <div class="absolute w-4 h-4 border-2 border-white rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow" :style="getHandlePositionStyle()" aria-hidden="true"></div>
+                                        <div class="absolute left-0 top-0 h-full rounded pointer-events-none" :style="getTrackFillStyle"></div>
+                                        <div class="absolute w-4 h-4 border-2 border-white rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow" :style="getHandlePositionStyle" aria-hidden="true"></div>
                                         <input type="range"
                                                :min="installmentPlans.min"
                                                :max="installmentPlans.max"
@@ -197,14 +197,14 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                                         >
                                     </div>
                                     <div class="absolute top-0 left-0 right-0 h-11 pointer-events-none" aria-hidden="true">
-                                        <template x-for="tick in getInstallmentTicks()" :key="tick.index">
+                                        <template x-for="tick in getInstallmentTicks" :key="tick.index">
                                             <div class="absolute -bottom-2 flex flex-col items-center gap-2 -translate-x-1/2" :style="tick.positionStyle">
                                                 <span :class="tick.labelClass" :style="tick.labelStyle" x-text="tick.period"></span>
                                                 <span :class="tick.dotClass" :style="tick.dotStyle"></span>
                                             </div>
                                         </template>
                                     </div>
-                                    <div class="absolute bottom-0 text-xs text-gray-400 pointer-events-none whitespace-nowrap -translate-x-1/2" :style="getSelectedUnitStyle()" aria-hidden="true">
+                                    <div class="absolute bottom-0 text-xs text-gray-400 pointer-events-none whitespace-nowrap -translate-x-1/2" :style="getSelectedUnitStyle" aria-hidden="true">
                                         <?= $escaper->escapeHtml(__('mes.')); ?>
                                     </div>
                                 </div>
