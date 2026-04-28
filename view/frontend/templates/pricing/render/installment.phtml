@@ -29,7 +29,7 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
 ?>
 <?php if ($viewKey !== InstallmentHelper::LEANPAY_INSTALLMENT_VIEW_OPTION_PRODUCT_PAGE): ?>
     <?php if ($price && $canShow && $meetsThreshold): ?>
-        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3"
+        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3 mt-1"
              style="color: <?= $escaper->escapeHtmlAttr($color) ?>;
                      background-color: <?= $escaper->escapeHtmlAttr($helper->getPlpBackgroundColor()) ?>;
                      font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
@@ -40,7 +40,7 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                  style="height: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;"/>
         </div>
     <?php elseif ($price && $canShow && !$meetsThreshold): ?>
-        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3"
+        <div class="inline-flex items-center gap-2 rounded-md py-2 px-3 mt-1"
              style="color: <?= $escaper->escapeHtmlAttr($color) ?>;
                      background-color: <?= $escaper->escapeHtmlAttr($helper->getPlpBackgroundColor()) ?>;
                      font-size: <?= $escaper->escapeHtmlAttr($fontSize) ?>px;">
@@ -149,7 +149,7 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                         <?php endif; ?>
 
                     </div>
-                    <div class="installment-tooltip relative shadow-md rounded-lg mt-3 p-5 max-w-full block bg-white">
+                    <div class="installment-tooltip absolute shadow-md rounded-lg p-5 max-w-full block bg-white z-10">
                         <div class="installment-tooltip-header flex justify-between items-center px-5 py-4 border-b border-gray-200 md:hidden">
                             <div class="installment-tooltip-title font-semibold text-lg text-gray-700">
                                 <?= $escaper->escapeHtml(__('Izračun obrokov')); ?>
@@ -171,14 +171,36 @@ $meetsThreshold = $helper->meetsAmountThreshold($amount);
                             </div>
                         </div>
                         <div class="installment-plans">
-                            <input type="range"
-                                   :min="installmentPlans.min"
-                                   :max="installmentPlans.max"
-                                   step="1"
-                                   @change="setSelectedPlanId"
-                                   :value="selectedPlanId"
-                                   class="w-full"
+                            <div class="relative pt-11 pb-6 my-4"
+                                style="--lp-brand: <?= $escaper->escapeHtmlAttr($helper->getBackgroundColor()) ?>;
+                                    --lp-brand-text: <?= $escaper->escapeHtmlAttr($helper->getPdpTextColor()) ?>;"
                             >
+                                <div class="relative h-1.5 rounded" style="background-color: color-mix(in srgb, var(--lp-brand) 40%, white);">
+                                    <div class="absolute left-0 top-0 h-full rounded pointer-events-none" :style="getTrackFillStyle()"></div>
+                                    <div class="absolute w-4 h-4 border-2 border-white rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow" :style="getHandlePositionStyle()" aria-hidden="true"></div>
+                                    <input type="range"
+                                           :min="installmentPlans.min"
+                                           :max="installmentPlans.max"
+                                           step="1"
+                                           @input="setSelectedPlanId"
+                                           @change="setSelectedPlanId"
+                                           :value="selectedPlanId"
+                                           class="absolute top-1/2 h-6 -translate-y-1/2 opacity-0 cursor-pointer m-0 p-0 appearance-none"
+                                           style="width: calc(100% + 16px);"
+                                    >
+                                </div>
+                                <div class="absolute top-0 left-0 right-0 h-11 pointer-events-none" aria-hidden="true">
+                                    <template x-for="tick in getInstallmentTicks()" :key="tick.index">
+                                        <div class="absolute -bottom-2 flex flex-col items-center gap-2 -translate-x-1/2" :style="tick.positionStyle">
+                                            <span :class="tick.labelClass" :style="tick.labelStyle" x-text="tick.period"></span>
+                                            <span :class="tick.dotClass" :style="tick.dotStyle"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="absolute bottom-0 text-xs text-gray-400 pointer-events-none whitespace-nowrap -translate-x-1/2" :style="getSelectedUnitStyle()" aria-hidden="true">
+                                    <?= $escaper->escapeHtml(__('mes.')); ?>
+                                </div>
+                            </div>
                         </div>
                         <div class="my-4 text-sm text-gray-500">
                             <?= $escaper->escapeHtml($helper->getQuickInformation()); ?>

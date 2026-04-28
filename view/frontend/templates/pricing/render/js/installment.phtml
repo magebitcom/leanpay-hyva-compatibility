@@ -58,7 +58,77 @@ $installments = $viewModels->require(Installments::class);
                 this.calculatorVisible = false;
             },
             setSelectedPlanId() {
-                this.selectedPlanId = this.$event.target.value
+                this.selectedPlanId = this.$event.target.value;
+            },
+            getSliderPercentage() {
+                const maxIndex = this.installmentPlans.max || 0;
+                const selected = parseInt(this.selectedPlanId, 10);
+                if (maxIndex <= 0) {
+                    return 0;
+                }
+
+                return (selected / maxIndex) * 100;
+            },
+            getInstallmentTicks() {
+                const data = this.installmentPlans.data || [];
+                const maxIndex = this.installmentPlans.max || 0;
+                const selectedId = parseInt(this.selectedPlanId, 10);
+                const seen = new Set();
+                let ticks = [];
+
+                data.forEach((item, idx) => {
+                    const p = parseInt(item.installment_period, 10);
+                    if (!isNaN(p) && !seen.has(p)) {
+                        seen.add(p);
+                        ticks.push({ period: p, index: idx });
+                    }
+                });
+
+                if (ticks.length > 8) {
+                    const sampled = [];
+                    const step = Math.ceil(ticks.length / 8);
+                    for (let j = 0; j < ticks.length; j += step) {
+                        sampled.push(ticks[j]);
+                    }
+                    const last = ticks[ticks.length - 1];
+                    if (sampled[sampled.length - 1].index !== last.index) {
+                        sampled.push(last);
+                    }
+                    ticks = sampled;
+                }
+
+                return ticks.map(tick => {
+                    const pct = maxIndex > 0 ? (tick.index / maxIndex) * 100 : 0;
+                    const isActive = tick.index <= selectedId;
+                    const isCurrent = tick.index === selectedId;
+
+                    return {
+                        period: tick.period,
+                        index: tick.index,
+                        positionStyle: { left: pct + '%' },
+                        labelClass: isCurrent
+                            ? 'text-sm leading-none px-1.5 py-0.5 rounded -mt-1'
+                            : 'text-sm text-gray-400 leading-none',
+                        labelStyle: isCurrent
+                            ? { color: 'var(--lp-brand-text)', backgroundColor: 'var(--lp-brand)' }
+                            : {},
+                        dotClass: 'w-2.5 h-2.5 rounded-full shrink-0',
+                        dotStyle: isCurrent
+                            ? { backgroundColor: 'var(--lp-brand)' }
+                            : (isActive
+                                ? { backgroundColor: 'var(--lp-brand)', boxShadow: '0 0 0 2px #ffffff' }
+                                : { backgroundColor: 'color-mix(in srgb, var(--lp-brand) 40%, white)', boxShadow: '0 0 0 2px #ffffff' })
+                    };
+                });
+            },
+            getTrackFillStyle() {
+                return { width: this.getSliderPercentage() + '%', backgroundColor: 'var(--lp-brand)' };
+            },
+            getHandlePositionStyle() {
+                return { left: this.getSliderPercentage() + '%', backgroundColor: 'var(--lp-brand)', zIndex: 2 };
+            },
+            getSelectedUnitStyle() {
+                return { left: this.getSliderPercentage() + '%' };
             },
             selectedPlan() {
                 return this.installmentPlans.data[this.selectedPlanId] || null;
