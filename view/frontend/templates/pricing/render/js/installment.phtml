@@ -108,16 +108,16 @@ $installments = $viewModels->require(Installments::class);
                         positionStyle: { left: pct + '%' },
                         labelClass: isCurrent
                             ? 'text-sm leading-none px-1.5 py-0.5 rounded -mt-1'
-                            : 'text-sm text-gray-400 leading-none',
+                            : 'text-sm leading-none',
                         labelStyle: isCurrent
                             ? { color: 'var(--lp-brand-text)', backgroundColor: 'var(--lp-brand)' }
-                            : {},
+                            : { color: 'var(--lp-text-dropdown)' },
                         dotClass: 'w-2.5 h-2.5 rounded-full shrink-0',
                         dotStyle: isCurrent
-                            ? { backgroundColor: 'var(--lp-brand)' }
+                            ? { backgroundColor: 'var(--lp-bg-secondary)' }
                             : (isActive
-                                ? { backgroundColor: 'var(--lp-brand)', boxShadow: '0 0 0 2px #ffffff' }
-                                : { backgroundColor: 'color-mix(in srgb, var(--lp-brand) 40%, white)', boxShadow: '0 0 0 2px #ffffff' })
+                                ? { backgroundColor: 'var(--lp-bg-secondary)', boxShadow: '0 0 0 2px var(--lp-bg-dropdown)' }
+                                : { backgroundColor: 'var(--lp-bg-light)', boxShadow: '0 0 0 2px var(--lp-bg-dropdown)' })
                     };
                 });
             },
