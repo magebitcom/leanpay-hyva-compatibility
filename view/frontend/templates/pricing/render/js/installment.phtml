@@ -1,0 +1,184 @@
+<?php
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Leanpay\PaymentHyva\ViewModel\Installments;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var Installments $installments */
+
+$installments = $viewModels->require(Installments::class);
+?>
+<script>
+    let installmentMap = <?= /** @noEscape */ $installments->getInstallmentMap() ?>;
+
+    function initLeanpayInstallment() {
+        return {
+            calculatorVisible: false,
+            selectedPlanId: 0,
+            installmentPlans: {},
+            currentAmount: 0,
+            abortController: null,
+
+            init() {
+                this.installmentPlans = JSON.parse(this.$root.dataset.installmentPlans || '{}');
+                this.selectedPlanId = this.installmentPlans.defaultIndex || 0;
+                this.currentAmount = parseFloat(this.$root.dataset.amount);
+
+                <?php if ($installments->isProductPage()): ?>
+                    this.$nextTick(() => {
+                        // Install a price hook into the hyva PDP price block to retrieve the current price
+                        const priceElement = document.querySelector('[x-data="initPrice<?=$installments->getProductId()?>()"]');
+                        const alpineData = Alpine.$data(priceElement);
+
+                        // Save original function so that we can override it again
+                        alpineData.calculateFinalPriceWithCustomOptionsOriginal = alpineData.calculateFinalPriceWithCustomOptionsOriginal || alpineData.calculateFinalPriceWithCustomOptions;
+                        const originalFunction = alpineData.calculateFinalPriceWithCustomOptionsOriginal;
+                        alpineData.calculateFinalPriceWithCustomOptions = function() {
+                            originalFunction.apply(alpineData);
+
+                            this.currentAmount = alpineData.calculatedFinalPriceWithCustomOptions;
+                        }.bind(this);
+                    });
+
+                    this.$watch('currentAmount', this.updateCalculator.bind(this));
+                <?php endif; ?>
+            },
+            toggleCalculator() {
+                this.calculatorVisible = !this.calculatorVisible;
+            },
+            getCalculatorArrowClasses() {
+                return this.calculatorVisible ? 'rotate-180' : '';
+            },
+            closeCalculator() {
+                this.calculatorVisible = false;
+            },
+            setSelectedPlanId() {
+                this.selectedPlanId = this.$event.target.value;
+            },
+            getSliderPercentage() {
+                const maxIndex = this.installmentPlans.max || 0;
+                const selected = parseInt(this.selectedPlanId, 10);
+                if (maxIndex <= 0) {
+                    return 0;
+                }
+
+                return (selected / maxIndex) * 100;
+            },
+            getInstallmentTicks() {
+                const data = this.installmentPlans.data || [];
+                const maxIndex = this.installmentPlans.max || 0;
+                const selectedId = parseInt(this.selectedPlanId, 10);
+                const seen = new Set();
+                let ticks = [];
+
+                data.forEach((item, idx) => {
+                    const p = parseInt(item.installment_period, 10);
+                    if (!isNaN(p) && !seen.has(p)) {
+                        seen.add(p);
+                        ticks.push({ period: p, index: idx });
+                    }
+                });
+
+                if (ticks.length > 8) {
+                    const sampled = [];
+                    const step = Math.ceil(ticks.length / 8);
+                    for (let j = 0; j < ticks.length; j += step) {
+                        sampled.push(ticks[j]);
+                    }
+                    const last = ticks[ticks.length - 1];
+                    if (sampled[sampled.length - 1].index !== last.index) {
+                        sampled.push(last);
+                    }
+                    ticks = sampled;
+                }
+
+                return ticks.map(tick => {
+                    const pct = maxIndex > 0 ? (tick.index / maxIndex) * 100 : 0;
+                    const isActive = tick.index <= selectedId;
+                    const isCurrent = tick.index === selectedId;
+
+                    return {
+                        period: tick.period,
+                        index: tick.index,
+                        positionStyle: { left: pct + '%' },
+                        labelClass: isCurrent
+                            ? 'text-sm leading-none px-1.5 py-0.5 rounded -mt-1'
+                            : 'text-sm leading-none',
+                        labelStyle: isCurrent
+                            ? { color: 'var(--lp-brand-text)', backgroundColor: 'var(--lp-brand)' }
+                            : { color: 'var(--lp-text-dropdown)' },
+                        dotClass: 'w-2.5 h-2.5 rounded-full shrink-0',
+                        dotStyle: isCurrent
+                            ? { backgroundColor: 'var(--lp-bg-secondary)' }
+                            : (isActive
+                                ? { backgroundColor: 'var(--lp-bg-secondary)', boxShadow: '0 0 0 2px var(--lp-bg-dropdown)' }
+                                : { backgroundColor: 'var(--lp-bg-light)', boxShadow: '0 0 0 2px var(--lp-bg-dropdown)' })
+                    };
+                });
+            },
+            getTrackFillStyle() {
+                return { width: this.getSliderPercentage() + '%', backgroundColor: 'var(--lp-brand)' };
+            },
+            getHandlePositionStyle() {
+                return { left: this.getSliderPercentage() + '%', backgroundColor: 'var(--lp-brand)', zIndex: 2 };
+            },
+            getSelectedUnitStyle() {
+                return { left: this.getSliderPercentage() + '%' };
+            },
+            selectedPlan() {
+                return this.installmentPlans.data[this.selectedPlanId] || null;
+            },
+            getSelectedPlanPriceHtml() {
+                return hyva.formatPrice(this.selectedPlan()?.installment_amount || 0, false, {
+                    decimalSeparator: '.'
+                });
+            },
+            async loadInstallmentHtml(amount) {
+                if (this.abortController) {
+                    this.abortController.abort();
+                }
+
+                this.abortController = new AbortController();
+
+                return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
+                    method: 'GET',
+                    signal: this.abortController.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        return result.installment_html;
+                    });
+            },
+            async updateCalculator(amount, oldAmount) {
+                if (amount === oldAmount) {
+                    return;
+                }
+
+                try {
+                    if (!(amount in installmentMap)) {
+                        installmentMap[amount] = await this.loadInstallmentHtml(amount);
+                    }
+
+                    hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
+                } catch (error) {
+                    // Ignore abort errors
+                    console.error(error);
+                }
+            }
+        }
+    }
+
+    window.addEventListener('alpine:init', () => {
+        Alpine.data('initLeanpayInstallment', initLeanpayInstallment);
+    }, {once: true});
+</script>
+<?php isset($hyvaCsp) && $hyvaCsp->registerInlineScript() ?>

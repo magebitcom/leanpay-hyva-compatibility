@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<page layout="1column" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <remove src="Leanpay_Payment::css/leanpay.css" />
+    </head>
+    <body>
+        <referenceContainer name="product.info.installment.price" htmlClass="mt-4"/>
+
+        <move element="product.info.installment.price" destination="product.info.additional" />
+
+        <referenceBlock name="product.price.installment_price">
+            <arguments>
+                <argument name="hyva_js_template_dependencies" xsi:type="array">
+                    <item name="Leanpay_PaymentHyva::pricing/render/js/installment.phtml" xsi:type="boolean">true</item>
+                </argument>
+            </arguments>
+        </referenceBlock>
+    </body>
+</page>
