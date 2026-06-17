@@ -11,6 +11,7 @@
 
         <referenceBlock name="product.price.installment_price">
             <arguments>
+                <argument name="installment_design" xsi:type="string">narrow</argument>
                 <argument name="hyva_js_template_dependencies" xsi:type="array">
                     <item name="Leanpay_PaymentHyva::pricing/render/js/installment.phtml" xsi:type="boolean">true</item>
                 </argument>
