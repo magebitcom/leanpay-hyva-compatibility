@@ -43,6 +43,13 @@ class ProductListItemPlugin
      */
     public function beforeGetItemHtml(ProductListItem $subject, Product $product, AbstractBlock $parentBlock): void
     {
+        // The preload is provided by Leanpay_Payment. The two modules are released and
+        // deployed independently, so skip the preload when paired with a payment module
+        // that predates it rather than breaking the page render.
+        if (!method_exists($this->helper, 'preloadCategoryPromotions')) {
+            return;
+        }
+
         $collection = $parentBlock instanceof ListProduct
             ? $parentBlock->getLoadedProductCollection()
             : $parentBlock->getData('product_collection');
