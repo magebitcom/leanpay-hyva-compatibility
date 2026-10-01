@@ -21,7 +21,10 @@ if ($vendorProductName) {
 $viewKey = $block->getData('view_key') ?? InstallmentHelper::LEANPAY_INSTALLMENT_VIEW_OPTION_PRODUCT_PAGE;
 $helper = $block->getInstallmentHelper();
 $canShow = $helper->canShowInstallment($viewKey);
-$installmentDesign = (string) ($block->getData('installment_design') ?: 'default');
+// A layout "installment_design" argument still overrides the admin setting. The modules are
+// deployed independently, so fall back to "default" with a payment module that predates the setting.
+$installmentDesign = (string) ($block->getData('installment_design')
+    ?: (method_exists($helper, 'getInstallmentDesign') ? $helper->getInstallmentDesign() : 'default'));
 $isNarrowDesign = $installmentDesign === 'narrow';
 
 $amount = intval(round((float)$block->getAmount()));
@@ -49,14 +52,25 @@ $iconPath = 'Leanpay_Payment::images/' . $helper->getColorTheme()['icons'] . '/'
         </div>
     <?php endif; ?>
 <?php else: ?>
+    <?php
+    $installmentPlansJson = $helper->getJsonConfig($amount, $vendorProductName);
+    // Stable key so Magewire re-renders keep the calculator state; changes when the rendered data changes
+    $wireKey = 'leanpay-' . hash('crc32b', implode('|', [
+        $installmentPlansJson,
+        $amount,
+        $installmentDesign,
+        $price,
+        (int) $canShow,
+    ]));
+    ?>
     <div class="installment-wrapper relative <?= $escaper->escapeHtmlAttr($price && $canShow ? 'block' : 'hidden') ?>"
             id="leanpay-wrapper"
             x-data="initLeanpayInstallment"
             @click.outside="closeCalculator"
-            data-installment-plans="<?= $escaper->escapeHtmlAttr($helper->getJsonConfig($amount, $vendorProductName)) ?>"
+            data-installment-plans="<?= $escaper->escapeHtmlAttr($installmentPlansJson) ?>"
             data-amount="<?= $escaper->escapeHtmlAttr($amount) ?>"
             data-design="<?= $escaper->escapeHtmlAttr($installmentDesign) ?>"
-            wire:key="<?= $escaper->escapeHtmlAttr(uniqid('leanpay')) ?>"
+            wire:key="<?= $escaper->escapeHtmlAttr($wireKey) ?>"
     >
         <?php if ($price && $canShow): ?>
             <div>
