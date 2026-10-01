@@ -14,5 +14,5 @@ Each release note file is named after the module version it documents, for examp
 
 ## Recent Releases
 
-### [2026-09-22 - 0.2.0: Category page performance](./0.2.0.md)
-Preloads Leanpay category promotion data once per product listing instead of once per product card, and skips the preload safely when paired with a payment module that predates it. Requires leanpay/payment 0.17.0 or newer to take effect.
+### [2026-10-01 - 0.2.0: Category page performance, design setting, checkout hardening](./0.2.0.md)
+Preloads Leanpay category promotion data once per product listing instead of once per product card, and skips the preload safely when paired with a payment module that predates it. The installment widget design is now chosen in admin and applies to the product page, price change updates and Hyvä Checkout; the product page now defaults to the Default design. The calculator no longer closes when Hyvä Checkout re-renders the payment method. Requires leanpay/payment 0.17.0 or newer.
