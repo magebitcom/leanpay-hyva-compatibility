@@ -13,21 +13,24 @@ use Magento\Framework\View\Element\Template;
 
 $installments = $viewModels->require(Installments::class);
 ?>
-<script>
+<script data-product-id="<?= $escaper->escapeHtmlAttr($installments->getProductId()) ?>">
     (() => {
         let installmentMap = <?= /** @noEscape */ $installments->getInstallmentMap() ?>;
+        const productId = document.currentScript.dataset.productId;
         let variantInstallment = null;
         let selectedVariantId = '';
+        // The badge component replaces itself on every update, so the latest update is tracked here, not per component
+        let latestUpdate = 0;
 
         <?php if ($installments->isProductPage()): ?>
             window.addEventListener('configurable-selection-changed', (event) => {
-                if (event.detail?.productId == <?= (int)$installments->getProductId() ?>) {
+                if (String(event.detail?.productId) === productId) {
                     selectedVariantId = event.detail.productIndex || '';
                 }
             });
 
             // A selected variant can carry its own promotion, its badge comes with the variant's prices (LMM-144)
-            window.addEventListener('update-prices-<?= (int)$installments->getProductId() ?>', (event) => {
+            window.addEventListener('update-prices-' + productId, (event) => {
                 const detail = event.detail || {};
                 const previous = variantInstallment;
 
@@ -68,7 +71,7 @@ $installments = $viewModels->require(Installments::class);
                     <?php if ($installments->isProductPage()): ?>
                         this.$nextTick(() => {
                             // Install a price hook into the hyva PDP price block to retrieve the current price
-                            const priceElement = document.querySelector('[x-data="initPrice<?=$installments->getProductId()?>()"]');
+                            const priceElement = document.querySelector('[x-data="initPrice' + productId + '()"]');
                             const alpineData = Alpine.$data(priceElement);
 
                             // Save original function so that we can override it again
@@ -183,7 +186,7 @@ $installments = $viewModels->require(Installments::class);
 
                     return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({
                         amount,
-                        product_id: <?= (int)$installments->getProductId() ?>,
+                        product_id: productId,
                         variant_id: variantId || ''
                     }), {
                         method: 'GET',
@@ -203,6 +206,8 @@ $installments = $viewModels->require(Installments::class);
                         return;
                     }
 
+                    const update = ++latestUpdate;
+
                     try {
                         if (variantInstallment && variantInstallment.amount === Math.round(amount)) {
                             hyva.replaceDomElement('#leanpay-wrapper', variantInstallment.html);
@@ -210,13 +215,15 @@ $installments = $viewModels->require(Installments::class);
                         }
 
                         // The pre-rendered map holds the parent product's badges, a selected variant has its own
-                        const key = variantInstallment ? amount + '-' + selectedVariantId : amount;
+                        const key = selectedVariantId ? amount + '-' + selectedVariantId : amount;
 
                         if (!(key in installmentMap)) {
-                            installmentMap[key] = await this.loadInstallmentHtml(
-                                amount,
-                                variantInstallment ? selectedVariantId : ''
-                            );
+                            installmentMap[key] = await this.loadInstallmentHtml(amount, selectedVariantId);
+                        }
+
+                        // A newer price or variant change took over while this response was loading
+                        if (update !== latestUpdate) {
+                            return;
                         }
 
                         hyva.replaceDomElement('#leanpay-wrapper', installmentMap[key]);
