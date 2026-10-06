@@ -16,6 +16,41 @@ $installments = $viewModels->require(Installments::class);
 <script>
     (() => {
         let installmentMap = <?= /** @noEscape */ $installments->getInstallmentMap() ?>;
+        let variantInstallment = null;
+        let selectedVariantId = '';
+
+        <?php if ($installments->isProductPage()): ?>
+            window.addEventListener('configurable-selection-changed', (event) => {
+                if (event.detail?.productId == <?= (int)$installments->getProductId() ?>) {
+                    selectedVariantId = event.detail.productIndex || '';
+                }
+            });
+
+            // A selected variant can carry its own promotion, its badge comes with the variant's prices (LMM-144)
+            window.addEventListener('update-prices-<?= (int)$installments->getProductId() ?>', (event) => {
+                const detail = event.detail || {};
+                const previous = variantInstallment;
+
+                variantInstallment = !detail.isMinimalPrice && typeof detail.instalment_html === 'string'
+                    ? {
+                        amount: Math.round(detail.finalPrice?.amount || 0),
+                        html: detail.instalment_html
+                    }
+                    : null;
+
+                if (!previous && !variantInstallment) {
+                    return;
+                }
+
+                // Variants can share a price, so refresh the badge even when the amount does not change
+                setTimeout(() => {
+                    const wrapper = document.getElementById('leanpay-wrapper');
+                    const component = wrapper && Alpine.$data(wrapper);
+
+                    component && component.updateCalculator(component.currentAmount, null);
+                });
+            });
+        <?php endif; ?>
 
         function initLeanpayInstallment() {
             return {
@@ -139,14 +174,18 @@ $installments = $viewModels->require(Installments::class);
                         decimalSeparator: '.'
                     });
                 },
-                async loadInstallmentHtml(amount) {
+                async loadInstallmentHtml(amount, variantId) {
                     if (this.abortController) {
                         this.abortController.abort();
                     }
 
                     this.abortController = new AbortController();
 
-                    return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
+                    return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({
+                        amount,
+                        product_id: <?= (int)$installments->getProductId() ?>,
+                        variant_id: variantId || ''
+                    }), {
                         method: 'GET',
                         signal: this.abortController.signal,
                         headers: {
@@ -165,11 +204,22 @@ $installments = $viewModels->require(Installments::class);
                     }
 
                     try {
-                        if (!(amount in installmentMap)) {
-                            installmentMap[amount] = await this.loadInstallmentHtml(amount);
+                        if (variantInstallment && variantInstallment.amount === Math.round(amount)) {
+                            hyva.replaceDomElement('#leanpay-wrapper', variantInstallment.html);
+                            return;
                         }
 
-                        hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
+                        // The pre-rendered map holds the parent product's badges, a selected variant has its own
+                        const key = variantInstallment ? amount + '-' + selectedVariantId : amount;
+
+                        if (!(key in installmentMap)) {
+                            installmentMap[key] = await this.loadInstallmentHtml(
+                                amount,
+                                variantInstallment ? selectedVariantId : ''
+                            );
+                        }
+
+                        hyva.replaceDomElement('#leanpay-wrapper', installmentMap[key]);
                     } catch (error) {
                         // Ignore abort errors
                         console.error(error);
