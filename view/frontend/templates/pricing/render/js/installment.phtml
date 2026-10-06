@@ -13,9 +13,47 @@ use Magento\Framework\View\Element\Template;
 
 $installments = $viewModels->require(Installments::class);
 ?>
-<script>
+<script data-product-id="<?= $escaper->escapeHtmlAttr($installments->getProductId()) ?>">
     (() => {
         let installmentMap = <?= /** @noEscape */ $installments->getInstallmentMap() ?>;
+        const productId = document.currentScript.dataset.productId;
+        let variantInstallment = null;
+        let selectedVariantId = '';
+        // The badge component replaces itself on every update, so the latest update is tracked here, not per component
+        let latestUpdate = 0;
+
+        <?php if ($installments->isProductPage()): ?>
+            window.addEventListener('configurable-selection-changed', (event) => {
+                if (String(event.detail?.productId) === productId) {
+                    selectedVariantId = event.detail.productIndex || '';
+                }
+            });
+
+            // A selected variant can carry its own promotion, its badge comes with the variant's prices (LMM-144)
+            window.addEventListener('update-prices-' + productId, (event) => {
+                const detail = event.detail || {};
+                const previous = variantInstallment;
+
+                variantInstallment = !detail.isMinimalPrice && typeof detail.instalment_html === 'string'
+                    ? {
+                        amount: Math.round(detail.finalPrice?.amount || 0),
+                        html: detail.instalment_html
+                    }
+                    : null;
+
+                if (!previous && !variantInstallment) {
+                    return;
+                }
+
+                // Variants can share a price, so refresh the badge even when the amount does not change
+                setTimeout(() => {
+                    const wrapper = document.getElementById('leanpay-wrapper');
+                    const component = wrapper && Alpine.$data(wrapper);
+
+                    component && component.updateCalculator(component.currentAmount, null);
+                });
+            });
+        <?php endif; ?>
 
         function initLeanpayInstallment() {
             return {
@@ -33,7 +71,7 @@ $installments = $viewModels->require(Installments::class);
                     <?php if ($installments->isProductPage()): ?>
                         this.$nextTick(() => {
                             // Install a price hook into the hyva PDP price block to retrieve the current price
-                            const priceElement = document.querySelector('[x-data="initPrice<?=$installments->getProductId()?>()"]');
+                            const priceElement = document.querySelector('[x-data="initPrice' + productId + '()"]');
                             const alpineData = Alpine.$data(priceElement);
 
                             // Save original function so that we can override it again
@@ -139,14 +177,18 @@ $installments = $viewModels->require(Installments::class);
                         decimalSeparator: '.'
                     });
                 },
-                async loadInstallmentHtml(amount) {
+                async loadInstallmentHtml(amount, variantId) {
                     if (this.abortController) {
                         this.abortController.abort();
                     }
 
                     this.abortController = new AbortController();
 
-                    return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({amount}), {
+                    return fetch(BASE_URL + 'leanpay/installment/index/?' + new URLSearchParams({
+                        amount,
+                        product_id: productId,
+                        variant_id: variantId || ''
+                    }), {
                         method: 'GET',
                         signal: this.abortController.signal,
                         headers: {
@@ -164,12 +206,27 @@ $installments = $viewModels->require(Installments::class);
                         return;
                     }
 
+                    const update = ++latestUpdate;
+
                     try {
-                        if (!(amount in installmentMap)) {
-                            installmentMap[amount] = await this.loadInstallmentHtml(amount);
+                        if (variantInstallment && variantInstallment.amount === Math.round(amount)) {
+                            hyva.replaceDomElement('#leanpay-wrapper', variantInstallment.html);
+                            return;
                         }
 
-                        hyva.replaceDomElement('#leanpay-wrapper', installmentMap[amount]);
+                        // The pre-rendered map holds the parent product's badges, a selected variant has its own
+                        const key = selectedVariantId ? amount + '-' + selectedVariantId : amount;
+
+                        if (!(key in installmentMap)) {
+                            installmentMap[key] = await this.loadInstallmentHtml(amount, selectedVariantId);
+                        }
+
+                        // A newer price or variant change took over while this response was loading
+                        if (update !== latestUpdate) {
+                            return;
+                        }
+
+                        hyva.replaceDomElement('#leanpay-wrapper', installmentMap[key]);
                     } catch (error) {
                         // Ignore abort errors
                         console.error(error);
