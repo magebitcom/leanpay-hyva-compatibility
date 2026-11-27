@@ -1,0 +1,21 @@
+version: 1.3.0
+base: [origin/staging, origin/master]
+exclude:
+  - docs/archive/
+  - docs/superpowers/
+  - docs/releases/
+require:
+  - Block/*/*/*/*.php
+  - Magewire/*/*.php
+  - Magewire/*/*/*/*.php
+  - Plugin/*/*.php
+  - ViewModel/*.php
+  - etc/*.xml
+  - etc/*/*.xml
+  - registration.php
+  - view/frontend/layout/*.xml
+  - view/frontend/templates/*/*/*.phtml
+  - view/frontend/templates/*/*/*/*.phtml
+  - view/frontend/templates/*/*/*/*/*/*/*/*/*.phtml
+  - .github/workflows/*
+ignore: []
